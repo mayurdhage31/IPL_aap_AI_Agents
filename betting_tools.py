@@ -416,19 +416,15 @@ class BettingAnalysisTools:
         fav_form = "strong" if fav_stats['strike_rate'] > 140 else "decent" if fav_stats['strike_rate'] > 130 else "struggling"
         und_form = "strong" if und_stats['strike_rate'] > 140 else "decent" if und_stats['strike_rate'] > 130 else "struggling"
         
-        analysis = f"{favorite} enters as the favorite with {fav_form} batting form (SR: {fav_stats['strike_rate']}, Avg: {fav_stats['batting_average']}), "
-        analysis += f"while {underdog} has shown {und_form} performances recently. "
-        
-        # H2H context
-        analysis += f"Historical head-to-head records show this fixture is often competitive, with both teams capable of explosive performances. "
+        analysis = f"{favorite} favored - SR {fav_stats['strike_rate']}, Avg {fav_stats['batting_average']} vs {underdog}'s SR {und_stats['strike_rate']}, Avg {und_stats['batting_average']}. "
         
         # Key differentiators
         if fav_stats['strike_rate_balls_41_50'] > und_stats['strike_rate_balls_41_50'] + 10:
-            analysis += f"{favorite}'s superior death overs batting (SR: {fav_stats['strike_rate_balls_41_50']}) gives them a crucial advantage in tight finishes."
+            analysis += f"{favorite} superior in death - SR {fav_stats['strike_rate_balls_41_50']} vs {und_stats['strike_rate_balls_41_50']}."
         elif abs(fav_stats['first_innings_average'] - und_stats['first_innings_average']) > 10:
-            analysis += f"The toss could be crucial, with {favorite} averaging {fav_stats['first_innings_average']} batting first compared to {underdog}'s {und_stats['first_innings_average']}."
+            analysis += f"Toss crucial - {favorite} Avg {fav_stats['first_innings_average']} batting first vs {underdog}'s {und_stats['first_innings_average']}."
         else:
-            analysis += f"Both teams have similar capabilities, making this a closely contested encounter."
+            analysis += f"Evenly matched - expect close contest."
         
         return analysis
     
@@ -440,16 +436,16 @@ class BettingAnalysisTools:
         
         # Boundary hitting trends
         if t1_stats['boundary_percentage'] > 18:
-            stats.append(f"{team1}'s matches have seen high boundary rates at {t1_stats['boundary_percentage']}% (balls per boundary: {t1_stats['balls_per_boundary']})")
+            stats.append(f"{team1} high boundary rate - {t1_stats['boundary_percentage']}%, ball per boundary {t1_stats['balls_per_boundary']}")
         if t2_stats['boundary_percentage'] > 18:
-            stats.append(f"{team2}'s matches have seen high boundary rates at {t2_stats['boundary_percentage']}% (balls per boundary: {t2_stats['balls_per_boundary']})")
+            stats.append(f"{team2} high boundary rate - {t2_stats['boundary_percentage']}%, ball per boundary {t2_stats['balls_per_boundary']}")
         
         # Key player insights (inferred from team stats)
         if t1_stats['strike_rate_balls_1_10'] > 140:
-            stats.append(f"{team1} has explosive openers with powerplay SR of {t1_stats['strike_rate_balls_1_10']}")
+            stats.append(f"{team1} explosive openers - Powerplay SR {t1_stats['strike_rate_balls_1_10']}")
         
         if t2_stats['strike_rate_balls_41_50'] > 170:
-            stats.append(f"{team2} boasts dangerous finishers with death overs SR of {t2_stats['strike_rate_balls_41_50']}")
+            stats.append(f"{team2} dangerous finishers - Death SR {t2_stats['strike_rate_balls_41_50']}")
         
         # Pace vs Spin trends
         t1_pace_advantage = t1_stats['strike_rate_vs_pace'] - t1_stats['strike_rate_vs_spin']
@@ -457,15 +453,15 @@ class BettingAnalysisTools:
         
         if abs(t1_pace_advantage) > 10:
             if t1_pace_advantage > 0:
-                stats.append(f"{team1} performs better against pace (SR: {t1_stats['strike_rate_vs_pace']}) than spin (SR: {t1_stats['strike_rate_vs_spin']})")
+                stats.append(f"{team1} better vs pace - SR {t1_stats['strike_rate_vs_pace']} vs spin SR {t1_stats['strike_rate_vs_spin']}")
             else:
-                stats.append(f"{team1} excels against spin bowling (SR: {t1_stats['strike_rate_vs_spin']}) compared to pace (SR: {t1_stats['strike_rate_vs_pace']})")
+                stats.append(f"{team1} excels vs spin - SR {t1_stats['strike_rate_vs_spin']} vs pace SR {t1_stats['strike_rate_vs_pace']}")
         
         # Innings preference
         if t1_stats['second_innings_average'] > t1_stats['first_innings_average'] + 5:
-            stats.append(f"{team1} has a strong chasing record with 2nd innings average of {t1_stats['second_innings_average']} vs {t1_stats['first_innings_average']} batting first")
+            stats.append(f"{team1} strong chasers - 2nd innings Avg {t1_stats['second_innings_average']} vs 1st innings {t1_stats['first_innings_average']}")
         elif t1_stats['first_innings_average'] > t1_stats['second_innings_average'] + 5:
-            stats.append(f"{team1} prefers batting first with 1st innings average of {t1_stats['first_innings_average']} vs {t1_stats['second_innings_average']} chasing")
+            stats.append(f"{team1} prefers batting first - 1st innings Avg {t1_stats['first_innings_average']} vs 2nd innings {t1_stats['second_innings_average']}")
         
         return stats
     
@@ -491,12 +487,12 @@ class BettingAnalysisTools:
             winner = team1
             confidence = min(85, 55 + (t1_score - t2_score) / 2)
             odds = round(1.5 + (100 - confidence) / 50, 2)
-            reasoning = f"{team1} has superior overall stats with SR of {t1_stats['strike_rate']} and average of {t1_stats['batting_average']}, compared to {team2}'s SR of {t2_stats['strike_rate']} and average of {t2_stats['batting_average']}"
+            reasoning = f"{team1} superior stats - SR {t1_stats['strike_rate']}, Avg {t1_stats['batting_average']} vs {team2} SR {t2_stats['strike_rate']}, Avg {t2_stats['batting_average']}"
         else:
             winner = team2
             confidence = min(85, 55 + (t2_score - t1_score) / 2)
             odds = round(1.5 + (100 - confidence) / 50, 2)
-            reasoning = f"{team2} has superior overall stats with SR of {t2_stats['strike_rate']} and average of {t2_stats['batting_average']}, compared to {team1}'s SR of {t1_stats['strike_rate']} and average of {t1_stats['batting_average']}"
+            reasoning = f"{team2} superior stats - SR {t2_stats['strike_rate']}, Avg {t2_stats['batting_average']} vs {team1} SR {t1_stats['strike_rate']}, Avg {t1_stats['batting_average']}"
         
         recommendations.append({
             "bet_type": "Match Winner",
@@ -516,15 +512,15 @@ class BettingAnalysisTools:
         if team_combined_avg > venue_avg_score + 5:
             selection = f"Over {total_runs_line}.5 Total Runs"
             odds = 1.85
-            reasoning = f"Venue average first innings score is {venue_avg_score}, but both teams average higher ({t1_stats['first_innings_average']} and {t2_stats['first_innings_average']}). Historical venue data shows average total of {round(venue_stats['average_score'] * 2)} runs. Expect a high-scoring game."
+            reasoning = f"Teams avg higher than venue - {t1_stats['first_innings_average']} & {t2_stats['first_innings_average']} vs venue {venue_avg_score}. Expect high-scoring game."
         elif team_combined_avg < venue_avg_score - 5:
             selection = f"Under {total_runs_line}.5 Total Runs"
             odds = 1.90
-            reasoning = f"Venue average first innings score is {venue_avg_score}, but both teams average lower ({t1_stats['first_innings_average']} and {t2_stats['first_innings_average']}). Historical venue trends suggest {round(venue_stats['average_score'] * 2)} total runs. Expect a controlled game."
+            reasoning = f"Teams avg lower than venue - {t1_stats['first_innings_average']} & {t2_stats['first_innings_average']} vs venue {venue_avg_score}. Expect controlled game."
         else:
             selection = f"Over {total_runs_line}.5 Total Runs"
             odds = 1.88
-            reasoning = f"Venue historically averages {venue_avg_score} in first innings with combined match average of {round(venue_stats['average_score'] * 2)} runs. Both teams' first innings averages ({t1_stats['first_innings_average']} and {t2_stats['first_innings_average']}) align with venue trends, suggesting a competitive high-scoring encounter."
+            reasoning = f"Teams align with venue avg - {t1_stats['first_innings_average']} & {t2_stats['first_innings_average']} vs venue {venue_avg_score}. Competitive high-scoring match expected."
         
         recommendations.append({
             "bet_type": "Total Runs",
@@ -549,7 +545,7 @@ class BettingAnalysisTools:
             player_names = ", ".join([p['name'] for p in top_players[:2]])
             selection = f"{top_player['name']} ({top_team}) Top Team Run Scorer"
             odds = 4.50
-            reasoning = f"{top_team} has the highest team batting average ({team_avg}). Key players like {player_names} are in excellent form. {top_player['name']} averages {top_player['average']} with SR of {top_player['strike_rate']}, making him a strong candidate for top scorer."
+            reasoning = f"{top_player['name']} in form - Avg {top_player['average']}, SR {top_player['strike_rate']}. {top_team} team avg {team_avg} highest."
         else:
             selection = f"{top_team} batsman to be top team scorer"
             odds = 4.50
@@ -574,12 +570,12 @@ class BettingAnalysisTools:
             powerplay_line = round(venue_powerplay_avg + 5)
             selection = f"Over {powerplay_line}.5 Runs in First 6 Overs"
             odds = 1.85
-            reasoning = f"Both teams have aggressive powerplay approaches with {team1} SR of {t1_powerplay_sr} and {team2} SR of {t2_powerplay_sr}. Venue averages {venue_powerplay_avg} runs in powerplay during first innings. Expect explosive starts from both sides."
+            reasoning = f"Aggressive powerplay - {team1} SR {t1_powerplay_sr}, {team2} SR {t2_powerplay_sr} vs venue avg {venue_powerplay_avg}. Explosive starts expected."
         else:
             powerplay_line = round(venue_powerplay_avg - 3)
             selection = f"Under {powerplay_line}.5 Runs in First 6 Overs"
             odds = 1.92
-            reasoning = f"Teams show cautious powerplay approaches with {team1} SR of {t1_powerplay_sr} and {team2} SR of {t2_powerplay_sr}. Venue averages {venue_powerplay_avg} runs in first 6 overs. Expect measured starts."
+            reasoning = f"Cautious powerplay - {team1} SR {t1_powerplay_sr}, {team2} SR {t2_powerplay_sr} vs venue avg {venue_powerplay_avg}. Measured starts expected."
         
         recommendations.append({
             "bet_type": "Powerplay Runs (First 6 Overs)",
@@ -596,11 +592,11 @@ class BettingAnalysisTools:
         if t1_powerplay_sr > 145 or t2_powerplay_sr > 145:
             selection = f"Over 7.5 Runs in First Over"
             odds = 2.10
-            reasoning = f"With explosive powerplay strike rates ({team1}: {t1_powerplay_sr}, {team2}: {t2_powerplay_sr}), teams typically score {avg_first_over_runs}+ runs in the opening over at this venue. Historical powerplay data shows aggressive intent from ball one."
+            reasoning = f"Explosive powerplay SRs - {team1} {t1_powerplay_sr}, {team2} {t2_powerplay_sr}. Expect {avg_first_over_runs}+ runs in first over."
         else:
             selection = f"Under 8.5 Runs in First Over"
             odds = 1.80
-            reasoning = f"Teams show measured starts with powerplay SRs of {t1_powerplay_sr} and {t2_powerplay_sr}. At this venue, teams average around {avg_first_over_runs} runs in the first over, suggesting a cautious approach early on."
+            reasoning = f"Measured starts - Powerplay SRs {t1_powerplay_sr} & {t2_powerplay_sr}. Avg {avg_first_over_runs} runs in first over."
         
         recommendations.append({
             "bet_type": "First Over Runs",
@@ -635,11 +631,10 @@ class BettingAnalysisTools:
             worse_team = team1
             worse_stats = t1_stats
         
-        form_analysis = f"{better_team} have been in superior form with consistent performances. Their batting lineup has posted an average of {better_stats['batting_average']} with a strike rate of {better_stats['strike_rate']}, "
-        form_analysis += f"significantly better than {worse_team}'s average of {worse_stats['batting_average']} and SR of {worse_stats['strike_rate']}. "
+        form_analysis = f"{better_team} in superior form - Avg {better_stats['batting_average']}, SR {better_stats['strike_rate']} vs {worse_team} Avg {worse_stats['batting_average']}, SR {worse_stats['strike_rate']}. "
         
         if better_stats['rank_strike_rate'] < worse_stats['rank_strike_rate']:
-            form_analysis += f"{better_team} are ranked #{better_stats['rank_strike_rate']} in strike rate compared to {worse_team}'s #{worse_stats['rank_strike_rate']}, highlighting their aggressive approach."
+            form_analysis += f"{better_team} ranked #{better_stats['rank_strike_rate']} in SR vs {worse_team} #{worse_stats['rank_strike_rate']}."
         
         reasoning['sections'].append({
             "title": "Can {} maintain their momentum?".format(better_team),
@@ -651,19 +646,15 @@ class BettingAnalysisTools:
         
         if abs(t1_stats['strike_rate_vs_spin'] - t2_stats['strike_rate_vs_spin']) > 10:
             if t1_stats['strike_rate_vs_spin'] > t2_stats['strike_rate_vs_spin']:
-                matchup_analysis += f"{team1} have a significant advantage against spin bowling (SR: {t1_stats['strike_rate_vs_spin']}) compared to {team2} (SR: {t2_stats['strike_rate_vs_spin']}). "
-                matchup_analysis += f"If the pitch offers turn, {team1}'s batsmen are better equipped to handle spin pressure. "
+                matchup_analysis += f"{team1} advantage vs spin - SR {t1_stats['strike_rate_vs_spin']} vs {team2} SR {t2_stats['strike_rate_vs_spin']}. "
             else:
-                matchup_analysis += f"{team2} excel against spin bowling (SR: {t2_stats['strike_rate_vs_spin']}) compared to {team1} (SR: {t1_stats['strike_rate_vs_spin']}). "
-                matchup_analysis += f"On a turning track, {team2} would have the upper hand. "
+                matchup_analysis += f"{team2} excel vs spin - SR {t2_stats['strike_rate_vs_spin']} vs {team1} SR {t1_stats['strike_rate_vs_spin']}. "
         
         if abs(t1_stats['strike_rate_balls_41_50'] - t2_stats['strike_rate_balls_41_50']) > 15:
             if t1_stats['strike_rate_balls_41_50'] > t2_stats['strike_rate_balls_41_50']:
-                matchup_analysis += f"{team1}'s death overs prowess (SR: {t1_stats['strike_rate_balls_41_50']}) is far superior to {team2}'s (SR: {t2_stats['strike_rate_balls_41_50']}). "
-                matchup_analysis += f"In close games, {team1}'s finishers can accelerate when it matters most."
+                matchup_analysis += f"{team1} death overs prowess - SR {t1_stats['strike_rate_balls_41_50']} vs {team2} SR {t2_stats['strike_rate_balls_41_50']}."
             else:
-                matchup_analysis += f"{team2}'s death overs prowess (SR: {t2_stats['strike_rate_balls_41_50']}) is far superior to {team1}'s (SR: {t1_stats['strike_rate_balls_41_50']}). "
-                matchup_analysis += f"In close games, {team2}'s finishers can accelerate when it matters most."
+                matchup_analysis += f"{team2} death overs prowess - SR {t2_stats['strike_rate_balls_41_50']} vs {team1} SR {t1_stats['strike_rate_balls_41_50']}."
         
         if matchup_analysis:
             reasoning['sections'].append({
@@ -675,10 +666,10 @@ class BettingAnalysisTools:
         depth_analysis = ""
         
         if t1_stats['boundary_percentage'] > 19:
-            depth_analysis += f"{team1} have shown excellent batting depth with a boundary percentage of {t1_stats['boundary_percentage']}%, indicating multiple batsmen contributing. "
+            depth_analysis += f"{team1} excellent batting depth - {t1_stats['boundary_percentage']}% boundary rate. "
         
         if t2_stats['dot_ball_percentage'] < 35:
-            depth_analysis += f"{team2} have been efficient in rotating strike with a low dot ball percentage of {t2_stats['dot_ball_percentage']}%, showing smart batting. "
+            depth_analysis += f"{team2} efficient strike rotation - {t2_stats['dot_ball_percentage']}% dot balls. "
         
         if depth_analysis:
             reasoning['sections'].append({
@@ -691,13 +682,9 @@ class BettingAnalysisTools:
         avg_t2_score = round((t2_stats['first_innings_average'] + t2_stats['second_innings_average']) / 2)
         
         if t1_form_score > t2_form_score:
-            prediction = f"Back {team1} to post around {avg_t1_score} runs and secure victory. "
-            prediction += f"{team2} may struggle to chase down a competitive total, likely finishing around {avg_t2_score - 15} runs. "
-            prediction += f"Predicted result: {team1} to win by 20-30 runs or 4-5 wickets."
+            prediction = f"{team1} to post ~{avg_t1_score} runs and win. {team2} likely ~{avg_t2_score - 15}. Prediction: {team1} by 20-30 runs or 4-5 wickets."
         else:
-            prediction = f"Back {team2} to post around {avg_t2_score} runs and secure victory. "
-            prediction += f"{team1} may struggle to chase down a competitive total, likely finishing around {avg_t1_score - 15} runs. "
-            prediction += f"Predicted result: {team2} to win by 20-30 runs or 4-5 wickets."
+            prediction = f"{team2} to post ~{avg_t2_score} runs and win. {team1} likely ~{avg_t1_score - 15}. Prediction: {team2} by 20-30 runs or 4-5 wickets."
         
         reasoning['final_prediction'] = prediction
         

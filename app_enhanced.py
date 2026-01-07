@@ -29,17 +29,17 @@ DARK_THEME_CSS = """
     
     .main-card {
         background-color: #1C2A3A;
-        padding: 25px;
+        padding: 15px;
         border-radius: 12px;
-        margin: 15px 0;
+        margin: 8px 0;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     }
     
     .inner-card {
         background-color: #223347;
-        padding: 20px;
+        padding: 12px;
         border-radius: 10px;
-        margin: 12px 0;
+        margin: 6px 0;
     }
     
     .main-header {
@@ -53,14 +53,14 @@ DARK_THEME_CSS = """
         color: #2DD4BF;
         font-weight: 600;
         font-size: 1.8em;
-        margin: 20px 0 15px 0;
+        margin: 12px 0 8px 0;
     }
     
     .subsection-title {
         color: #2DD4BF;
         font-weight: 600;
         font-size: 1.4em;
-        margin: 15px 0 10px 0;
+        margin: 10px 0 6px 0;
     }
     
     .body-text {
@@ -77,22 +77,22 @@ DARK_THEME_CSS = """
     .strength-box {
         background-color: #223347;
         border-left: 4px solid #22C55E;
-        padding: 15px;
+        padding: 10px;
         border-radius: 8px;
-        margin: 10px 0;
+        margin: 6px 0;
     }
     
     .weakness-box {
         background-color: #223347;
         border-left: 4px solid #EF4444;
-        padding: 15px;
+        padding: 10px;
         border-radius: 8px;
-        margin: 10px 0;
+        margin: 6px 0;
     }
     
     .metric-card {
         background-color: #223347;
-        padding: 20px;
+        padding: 12px;
         border-radius: 10px;
         text-align: center;
         border: 1px solid #2DD4BF;
@@ -113,24 +113,24 @@ DARK_THEME_CSS = """
     .fantasy-anchor {
         background-color: #223347;
         border: 2px solid #22C55E;
-        padding: 15px;
+        padding: 10px;
         border-radius: 10px;
-        margin: 10px 0;
+        margin: 6px 0;
     }
     
     .fantasy-risk {
         background-color: #223347;
         border: 2px solid #F59E0B;
-        padding: 15px;
+        padding: 10px;
         border-radius: 10px;
-        margin: 10px 0;
+        margin: 6px 0;
     }
     
     .venue-card {
         background-color: #223347;
-        padding: 18px;
+        padding: 12px;
         border-radius: 10px;
-        margin: 12px 0;
+        margin: 6px 0;
         border-left: 4px solid #2DD4BF;
     }
     
@@ -152,7 +152,7 @@ DARK_THEME_CSS = """
     
     .divider {
         border-top: 2px solid #2DD4BF;
-        margin: 40px 0;
+        margin: 20px 0;
     }
     
     h1, h2, h3 {
@@ -508,8 +508,8 @@ if analyze_button and selected_player:
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-st.markdown('<h2 class="section-title">⭐ Fantasy Cheat Sheet</h2>', unsafe_allow_html=True)
-st.markdown('<p class="body-text">Quick fantasy insights for match preparation - readable in 30 seconds</p>', unsafe_allow_html=True)
+st.markdown('<h2 class="section-title">🏆 Match Analysis - Team Selection</h2>', unsafe_allow_html=True)
+st.markdown('<p class="body-text">Select teams for Fantasy Cheat Sheet and Betting Preview analysis</p>', unsafe_allow_html=True)
 
 fantasy_tools = initialize_fantasy_tools()
 available_teams = fantasy_tools.get_available_teams()
@@ -517,10 +517,23 @@ available_teams = fantasy_tools.get_available_teams()
 col_team1, col_team2 = st.columns(2)
 
 with col_team1:
-    team1 = st.selectbox("Team 1", options=available_teams, index=0, key="team1_select")
+    team1 = st.selectbox("Team 1", options=available_teams, index=0, key="unified_team1")
 
 with col_team2:
-    team2 = st.selectbox("Team 2", options=available_teams, index=min(1, len(available_teams)-1), key="team2_select")
+    team2 = st.selectbox("Team 2", options=available_teams, index=min(1, len(available_teams)-1), key="unified_team2")
+
+if 'selected_team1' not in st.session_state:
+    st.session_state['selected_team1'] = available_teams[0]
+if 'selected_team2' not in st.session_state:
+    st.session_state['selected_team2'] = available_teams[min(1, len(available_teams)-1)]
+
+st.session_state['selected_team1'] = team1
+st.session_state['selected_team2'] = team2
+
+st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+
+st.markdown('<h2 class="section-title">⭐ Fantasy Cheat Sheet</h2>', unsafe_allow_html=True)
+st.markdown('<p class="body-text">Quick fantasy insights for match preparation - readable in 30 seconds</p>', unsafe_allow_html=True)
 
 if st.button("🎯 Generate Fantasy Analysis", use_container_width=True, key="fantasy_btn"):
     with st.spinner("Generating fantasy insights..."):
@@ -689,15 +702,9 @@ st.markdown('<h2 class="section-title">💰 Betting Preview</h2>', unsafe_allow_
 st.markdown('<p class="body-text">AI-powered match preview from a betting perspective using team statistics</p>', unsafe_allow_html=True)
 
 betting_tools = initialize_betting_tools()
-available_teams = betting_tools.get_all_teams_list()
 
-col_bet1, col_bet2 = st.columns(2)
-
-with col_bet1:
-    betting_team1 = st.selectbox("Select Team 1", options=available_teams, index=0, key="betting_team1")
-
-with col_bet2:
-    betting_team2 = st.selectbox("Select Team 2", options=available_teams, index=min(1, len(available_teams)-1), key="betting_team2")
+betting_team1 = st.session_state.get('selected_team1', available_teams[0])
+betting_team2 = st.session_state.get('selected_team2', available_teams[min(1, len(available_teams)-1)])
 
 if st.button("🎯 Generate Betting Preview", use_container_width=True, key="betting_preview_btn"):
     if betting_team1 == betting_team2:

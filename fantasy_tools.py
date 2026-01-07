@@ -52,13 +52,13 @@ class FantasyAnalysisTools:
             
             if pace_pct > 60:
                 bias_type = "Pace-Dominant"
-                fantasy_tip = "Pick fast bowlers and pace-hitters"
+                fantasy_tip = f"Favor pacers & pace-hitters - {pace_pct:.0f}% wickets to pace"
             elif spin_pct > 50:
                 bias_type = "Spin-Heavy"
-                fantasy_tip = "Load up on spinners and spin-players"
+                fantasy_tip = f"Load spinners & spin-players - {spin_pct:.0f}% wickets to spin"
             else:
                 bias_type = "Balanced"
-                fantasy_tip = "Balanced team composition works best"
+                fantasy_tip = f"Balanced team works - Pace {pace_pct:.0f}%, Spin {spin_pct:.0f}%"
             
             venue_specialists = self.batsman_venue_df[
                 self.batsman_venue_df['venue'].str.strip() == venue_name.strip()
@@ -105,7 +105,7 @@ class FantasyAnalysisTools:
         return {
             "total_venues": len(venues_analysis),
             "venues": venues_analysis[:3],
-            "recommendation": f"Analyze venue conditions before finalizing team. Pace-dominant venues favor fast bowlers."
+            "recommendation": "Check venue bias before finalizing team"
         }
     
     def get_match_situation_edge(self, team1: str, team2: str) -> Dict[str, Any]:
@@ -188,22 +188,22 @@ class FantasyAnalysisTools:
         insights = []
         
         if team1_analysis['death_overs_sr'] > 170:
-            insights.append(f"{team1} has explosive death overs (SR: {team1_analysis['death_overs_sr']}) - pick their finishers")
+            insights.append(f"{team1} explosive in death - SR {team1_analysis['death_overs_sr']}, pick finishers")
         
         if team2_analysis['death_overs_sr'] > 170:
-            insights.append(f"{team2} has explosive death overs (SR: {team2_analysis['death_overs_sr']}) - pick their finishers")
+            insights.append(f"{team2} explosive in death - SR {team2_analysis['death_overs_sr']}, pick finishers")
         
         if team1_analysis['toss_preference'] == "Bat First" and team2_analysis['toss_preference'] == "Chase":
-            insights.append("Contrasting toss preferences - match situation will favor one team")
+            insights.append("Contrasting toss preferences - situation favors one team")
         
         if not insights:
-            insights.append("Both teams show balanced performance across innings")
+            insights.append("Balanced performance across innings for both teams")
         
         return {
             "team1_analysis": team1_analysis,
             "team2_analysis": team2_analysis,
             "key_insights": insights,
-            "fantasy_advice": "Consider toss result and team batting order when finalizing captain/vice-captain"
+            "fantasy_advice": "Factor toss result into C/VC picks"
         }
     
     def get_fantasy_picks(self, team1: str, team2: str) -> Dict[str, Any]:
@@ -251,7 +251,7 @@ class FantasyAnalysisTools:
                 "consistency": round(float(player['Consistency_Rating']), 1),
                 "ceiling": round(float(player['ceiling_average']), 1),
                 "total_fp": round(float(player['Total_FP']), 1),
-                "why_pick": f"High consistency ({player['Consistency_Rating']:.0f}) with strong ceiling ({player['ceiling_average']:.0f})"
+                "why_pick": f"Consistent performer - Consistency {player['Consistency_Rating']:.0f}, Ceiling {player['ceiling_average']:.0f}, Total FP {player['Total_FP']:.0f}"
             })
         
         risk_candidates = all_players[
@@ -268,7 +268,7 @@ class FantasyAnalysisTools:
                 "upside": round(float(player['Upside_Score']), 1),
                 "risk": round(float(player['Risk.Rating']), 1),
                 "total_fp": round(float(player['Total_FP']), 1),
-                "why_pick": f"High upside potential ({player['Upside_Score']:.0f}) - differential pick"
+                "why_pick": f"Differential pick - Upside {player['Upside_Score']:.0f}, Risk {player['Risk.Rating']:.0f}, Total FP {player['Total_FP']:.0f}"
             })
         
         wk_players = all_players[all_players['position'] == 'Wicket-Keeper'].nlargest(1, 'Total_FP')
@@ -291,7 +291,7 @@ class FantasyAnalysisTools:
             "risk_picks": risk_list,
             "example_xi": example_xi,
             "team_composition": f"{len(example_xi['wicket_keepers'])} WK, {len(example_xi['batsmen'])} BAT, {len(example_xi['allrounders'])} ALL, {len(example_xi['bowlers'])} BOWL",
-            "strategy_note": "Anchor picks for consistency, risk picks for differentiation. Adjust based on venue and match situation."
+            "strategy_note": "Anchors for safety, risks for differentiation - adjust per venue"
         }
     
     def get_complete_fantasy_analysis(self, team1: str, team2: str) -> Dict[str, Any]:
