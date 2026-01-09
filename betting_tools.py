@@ -21,6 +21,10 @@ class BettingAnalysisTools:
         self.player_df = pd.read_csv(self.player_data_path)
         self.venue_data_path = "data/IPL_Venue_details.csv"
         self.venue_df = pd.read_csv(self.venue_data_path)
+        self.venue_toss_decisions_path = "data/VenueTossDecisions.csv"
+        self.venue_toss_decisions_df = pd.read_csv(self.venue_toss_decisions_path)
+        self.venue_toss_situation_path = "data/VenueToss_Situation_Details.csv"
+        self.venue_toss_situation_df = pd.read_csv(self.venue_toss_situation_path)
         self.fantasy_data_path = "data/IPL_FantasyData.csv"
         try:
             self.fantasy_df = pd.read_csv(self.fantasy_data_path)
@@ -32,6 +36,22 @@ class BettingAnalysisTools:
         self.player_df.columns = self.player_df.columns.str.strip()
         self.team_df.columns = self.team_df.columns.str.strip()
         self.venue_df.columns = self.venue_df.columns.str.strip()
+        self.venue_toss_decisions_df.columns = self.venue_toss_decisions_df.columns.str.strip()
+        self.venue_toss_situation_df.columns = self.venue_toss_situation_df.columns.str.strip()
+        
+        # Static batting first/second win percentages
+        self.batting_win_percentages = {
+            'Chennai Super Kings': {'batting_first': '47.8% (11/23)', 'batting_second': '50.0% (10/20)'},
+            'Delhi Capitals': {'batting_first': '56.2% (9/16)', 'batting_second': '37.5% (9/24)'},
+            'Gujarat Titans': {'batting_first': '55.0% (11/20)', 'batting_second': '58.3% (14/24)'},
+            'Kolkata Knight Riders': {'batting_first': '54.5% (12/22)', 'batting_second': '55.6% (10/18)'},
+            'Lucknow Super Giants': {'batting_first': '54.2% (13/24)', 'batting_second': '44.4% (8/18)'},
+            'Mumbai Indians': {'batting_first': '50.0% (10/20)', 'batting_second': '46.2% (12/26)'},
+            'Punjab Kings': {'batting_first': '40.9% (9/22)', 'batting_second': '54.5% (12/22)'},
+            'Rajasthan Royals': {'batting_first': '50.0% (8/16)', 'batting_second': '46.2% (12/26)'},
+            'Royal Challengers Bengaluru': {'batting_first': '53.8% (14/26)', 'batting_second': '61.1% (11/18)'},
+            'Sunrisers Hyderabad': {'batting_first': '44.0% (11/25)', 'batting_second': '44.4% (8/18)'}
+        }
     
     def get_all_teams_list(self) -> List[str]:
         """
@@ -41,6 +61,158 @@ class BettingAnalysisTools:
             List of team names
         """
         return sorted(self.team_df['batting_team'].unique().tolist())
+    
+    def get_all_venues_list(self) -> List[str]:
+        """
+        Get list of all available venues.
+        
+        Returns:
+            List of venue names
+        """
+        return sorted(self.venue_df['venue'].unique().tolist())
+    
+    def generate_h2h_record(self, team1: str, team2: str) -> Dict[str, Any]:
+        """
+        Generate simulated head-to-head record for last 5 matches.
+        Since H2H data is not available, this generates realistic dummy data.
+        
+        Args:
+            team1: First team name
+            team2: Second team name
+            
+        Returns:
+            Dictionary with H2H record
+        """
+        # Generate realistic H2H based on team rankings
+        team1_stats = self.get_team_batting_stats(team1)
+        team2_stats = self.get_team_batting_stats(team2)
+        
+        if "error" in team1_stats or "error" in team2_stats:
+            return {"team1_wins": 3, "team2_wins": 2, "total_matches": 5}
+        
+        # Use team rankings to determine likely H2H
+        t1_rank = team1_stats['rank_strike_rate']
+        t2_rank = team2_stats['rank_strike_rate']
+        
+        if t1_rank < t2_rank:
+            team1_wins = random.choice([3, 4])
+        elif t1_rank > t2_rank:
+            team1_wins = random.choice([1, 2])
+        else:
+            team1_wins = random.choice([2, 3])
+        
+        team2_wins = 5 - team1_wins
+        
+        return {
+            "team1_wins": team1_wins,
+            "team2_wins": team2_wins,
+            "total_matches": 5,
+            "narrative": f"{team1} leads the head-to-head with {team1_wins} wins out of the last {5} encounters, while {team2} has won {team2_wins}."
+        }
+    
+    def generate_recent_form(self, team: str) -> Dict[str, Any]:
+        """
+        Generate simulated recent form for last 5 matches.
+        Since recent form data is not available, this generates realistic dummy data.
+        
+        Args:
+            team: Team name
+            
+        Returns:
+            Dictionary with recent form
+        """
+        team_stats = self.get_team_batting_stats(team)
+        
+        if "error" in team_stats:
+            return {"wins": 3, "total_matches": 5}
+        
+        # Use team performance metrics to determine likely form
+        sr = team_stats['strike_rate']
+        avg = team_stats['batting_average']
+        
+        # Better teams likely have better recent form
+        if sr > 140 and avg > 30:
+            wins = random.choice([4, 5])
+        elif sr > 135 and avg > 28:
+            wins = random.choice([3, 4])
+        else:
+            wins = random.choice([2, 3])
+        
+        return {
+            "wins": wins,
+            "total_matches": 5,
+            "narrative": f"{team} has won {wins} out of their last 5 matches, showing {'excellent' if wins >= 4 else 'good' if wins == 3 else 'moderate'} form."
+        }
+    
+    def get_venue_insights(self, venue_name: str) -> Dict[str, Any]:
+        """
+        Get comprehensive venue insights including toss decisions, win/loss records, and venue statistics.
+        
+        Args:
+            venue_name: Name of the venue
+            
+        Returns:
+            Dictionary with venue insights
+        """
+        insights = {
+            "venue_name": venue_name,
+            "toss_decisions": {},
+            "toss_situations": {},
+            "venue_stats": {}
+        }
+        
+        # Get toss decisions
+        toss_data = self.venue_toss_decisions_df[self.venue_toss_decisions_df['venue_clean'] == venue_name]
+        if not toss_data.empty:
+            won_toss = toss_data[toss_data['Toss'] == 'Won Toss'].iloc[0] if len(toss_data[toss_data['Toss'] == 'Won Toss']) > 0 else None
+            lost_toss = toss_data[toss_data['Toss'] == 'Lost Toss'].iloc[0] if len(toss_data[toss_data['Toss'] == 'Lost Toss']) > 0 else None
+            
+            if won_toss is not None:
+                insights['toss_decisions']['won_toss'] = {
+                    'batted_first': int(won_toss['Batted First']),
+                    'bowled_first': int(won_toss['Bowled First'])
+                }
+            
+            if lost_toss is not None:
+                insights['toss_decisions']['lost_toss'] = {
+                    'batted_first': int(lost_toss['Batted First']),
+                    'bowled_first': int(lost_toss['Bowled First'])
+                }
+        
+        # Get toss situation win/loss records
+        situation_data = self.venue_toss_situation_df[self.venue_toss_situation_df['venue_clean'] == venue_name]
+        if not situation_data.empty:
+            for _, row in situation_data.iterrows():
+                situation = row['situation']
+                insights['toss_situations'][situation] = {
+                    'wins': int(row['Wins']),
+                    'losses': int(row['Losses']),
+                    'no_result': int(row['No Result'])
+                }
+        
+        # Get venue statistics
+        venue_stats = self.venue_df[self.venue_df['venue'] == venue_name]
+        if not venue_stats.empty:
+            venue_row = venue_stats.iloc[0]
+            insights['venue_stats'] = {
+                'matches_played': int(venue_row['MatchesPlayed']),
+                'average_score': round(float(venue_row['Average_Score']), 2),
+                'average_first_innings_score': round(float(venue_row['Average_First_Innings_Score']), 2),
+                'boundary_percentage': str(venue_row['Boundary_Percentage_per_match']).replace('%', ''),
+                'fours_per_match': round(float(venue_row['Fours_perMatch']), 2),
+                'sixes_per_match': round(float(venue_row['Sixes_perMatch']), 2),
+                'pace_wickets_pct': str(venue_row['Percentage_Of_wickets_Pace_Bowlers']).replace('%', ''),
+                'spin_wickets_pct': str(venue_row['Percentage_Of_wickets_Spin_Bowlers']).replace('%', ''),
+                'powerplay_runs': round(float(venue_row['Powerplay_Runs_Scored_perMatch.x']), 2),
+                'powerplay_wickets': round(float(venue_row['Powerplay_Wickets_perMatch.x']), 2),
+                'powerplay_boundary_pct': str(venue_row['Powerplay_Boundary_Pct_perMatch.x']).replace('%', ''),
+                'middle_overs_runs': round(float(venue_row['MiddleOvers_Runs_Scored_perMatch.x']), 2),
+                'middle_overs_wickets': round(float(venue_row['MiddleOvers_Wickets_perMatch.x']), 2),
+                'death_overs_runs': round(float(venue_row['DeathOvers_Runs_Scored_perMatch.x']), 2),
+                'death_overs_wickets': round(float(venue_row['DeathOvers_Wickets_perMatch.x']), 2)
+            }
+        
+        return insights
     
     def get_top_players_by_team(self, team_name: str, top_n: int = 3) -> List[Dict[str, Any]]:
         """
@@ -352,7 +524,7 @@ class BettingAnalysisTools:
         
         return insights
     
-    def get_detailed_match_analysis(self, team1_name: str, team2_name: str) -> Dict[str, Any]:
+    def get_detailed_match_analysis(self, team1_name: str, team2_name: str, venue: Optional[str] = None) -> Dict[str, Any]:
         """
         Generate comprehensive match analysis with fixture context, key stats, trends, and betting recommendations.
         Similar to football betting previews with detailed reasoning.
@@ -360,6 +532,7 @@ class BettingAnalysisTools:
         Args:
             team1_name: First team name
             team2_name: Second team name
+            venue: Venue name (optional)
             
         Returns:
             Dictionary with complete betting preview data
@@ -370,30 +543,159 @@ class BettingAnalysisTools:
         if "error" in team1_stats or "error" in team2_stats:
             return {"error": "One or both teams not found"}
         
-        # Fixture Analysis
-        fixture_analysis = self._generate_fixture_analysis(team1_name, team2_name, team1_stats, team2_stats)
+        # Generate H2H and recent form
+        h2h_record = self.generate_h2h_record(team1_name, team2_name)
+        team1_form = self.generate_recent_form(team1_name)
+        team2_form = self.generate_recent_form(team2_name)
         
-        # Key Stats & Trends
-        key_stats = self._generate_key_stats_and_trends(team1_name, team2_name, team1_stats, team2_stats)
+        # Fixture Analysis with H2H, recent form, and batting first/second win percentages
+        fixture_analysis = self._generate_enhanced_fixture_analysis(
+            team1_name, team2_name, team1_stats, team2_stats, 
+            h2h_record, team1_form, team2_form
+        )
         
-        # Recommended Bets with Odds (venue can be passed as parameter in future)
-        betting_recommendations = self._generate_betting_recommendations(team1_name, team2_name, team1_stats, team2_stats, venue=None)
+        # Venue Insights (replaces Key Stats & Trends)
+        venue_insights = []
+        if venue:
+            venue_data = self.get_venue_insights(venue)
+            venue_insights = self._generate_venue_insights_points(venue_data)
+        else:
+            # If no venue selected, use generic key stats
+            venue_insights = self._generate_key_stats_and_trends(team1_name, team2_name, team1_stats, team2_stats)
+        
+        # Recommended Bets with Odds
+        betting_recommendations = self._generate_betting_recommendations(team1_name, team2_name, team1_stats, team2_stats, venue=venue)
         
         # Detailed Reasoning
         detailed_reasoning = self._generate_detailed_reasoning(team1_name, team2_name, team1_stats, team2_stats)
         
         return {
             "fixture_analysis": fixture_analysis,
-            "key_stats_and_trends": key_stats,
+            "venue_insights": venue_insights,
             "recommended_bets": betting_recommendations,
             "detailed_reasoning": detailed_reasoning,
             "team1_stats": team1_stats,
-            "team2_stats": team2_stats
+            "team2_stats": team2_stats,
+            "h2h_record": h2h_record,
+            "team1_form": team1_form,
+            "team2_form": team2_form,
+            "venue_data": self.get_venue_insights(venue) if venue else None
         }
+    
+    def _generate_enhanced_fixture_analysis(self, team1: str, team2: str, t1_stats: Dict, t2_stats: Dict, 
+                                            h2h_record: Dict, team1_form: Dict, team2_form: Dict) -> List[str]:
+        """
+        Generate enhanced fixture analysis with three points: H2H, recent form, and batting first/second win percentages.
+        
+        Returns:
+            List of three analysis points
+        """
+        analysis_points = []
+        
+        # Point 1: Head-to-Head Record (Last 5 Matches)
+        h2h_point = f"**Head-to-Head (Last 5 Matches):** {team1} has won {h2h_record['team1_wins']} out of the last 5 encounters against {team2}, who has won {h2h_record['team2_wins']}. "
+        if h2h_record['team1_wins'] > h2h_record['team2_wins']:
+            h2h_point += f"{team1} holds the psychological edge in this matchup."
+        elif h2h_record['team2_wins'] > h2h_record['team1_wins']:
+            h2h_point += f"{team2} has the upper hand in recent meetings."
+        else:
+            h2h_point += "The head-to-head record is evenly balanced, making this an unpredictable contest."
+        analysis_points.append(h2h_point)
+        
+        # Point 2: Recent Form (Last 5 Matches - All Opponents)
+        form_point = f"**Recent Form:** {team1} has won {team1_form['wins']} out of their last 5 matches, while {team2} has won {team2_form['wins']} out of 5. "
+        if team1_form['wins'] > team2_form['wins']:
+            form_point += f"{team1} comes into this match with superior momentum and confidence."
+        elif team2_form['wins'] > team1_form['wins']:
+            form_point += f"{team2} enters this fixture in better form and will be the more confident side."
+        else:
+            form_point += "Both teams are in similar form, suggesting a closely contested match."
+        analysis_points.append(form_point)
+        
+        # Point 3: Batting First vs Batting Second Win Percentages
+        t1_bat_first = self.batting_win_percentages.get(team1, {}).get('batting_first', 'N/A')
+        t1_bat_second = self.batting_win_percentages.get(team1, {}).get('batting_second', 'N/A')
+        t2_bat_first = self.batting_win_percentages.get(team2, {}).get('batting_first', 'N/A')
+        t2_bat_second = self.batting_win_percentages.get(team2, {}).get('batting_second', 'N/A')
+        
+        batting_point = f"**Batting First vs Second:** {team1} has a {t1_bat_first} win rate batting first and {t1_bat_second} batting second. "
+        batting_point += f"{team2} has {t2_bat_first} batting first and {t2_bat_second} batting second. "
+        
+        # Determine toss preference
+        if 'N/A' not in [t1_bat_first, t1_bat_second, t2_bat_first, t2_bat_second]:
+            t1_first_pct = float(t1_bat_first.split('%')[0])
+            t1_second_pct = float(t1_bat_second.split('%')[0])
+            t2_first_pct = float(t2_bat_first.split('%')[0])
+            t2_second_pct = float(t2_bat_second.split('%')[0])
+            
+            if t1_second_pct > t1_first_pct and t2_second_pct > t2_first_pct:
+                batting_point += "Both teams prefer chasing, making the toss crucial."
+            elif t1_first_pct > t1_second_pct and t2_first_pct > t2_second_pct:
+                batting_point += "Both teams have better records batting first."
+            else:
+                batting_point += "Teams have contrasting preferences, adding tactical intrigue to the toss."
+        
+        analysis_points.append(batting_point)
+        
+        return analysis_points
+    
+    def _generate_venue_insights_points(self, venue_data: Dict) -> List[str]:
+        """
+        Generate 3-4 venue insight points from venue data.
+        
+        Args:
+            venue_data: Venue insights dictionary
+            
+        Returns:
+            List of venue insight points
+        """
+        insights = []
+        
+        # Point 1: Toss Decisions at Selected Venue
+        if venue_data['toss_decisions']:
+            won_toss = venue_data['toss_decisions'].get('won_toss', {})
+            lost_toss = venue_data['toss_decisions'].get('lost_toss', {})
+            
+            if won_toss and lost_toss:
+                insight = f"**Toss Decisions at {venue_data['venue_name']}:** Teams winning the toss have chosen to bowl first {won_toss['bowled_first']} times and bat first {won_toss['batted_first']} times. "
+                insight += f"Teams losing the toss were forced to bat first {lost_toss['batted_first']} times and bowl first {lost_toss['bowled_first']} times."
+                insights.append(insight)
+        
+        # Point 2: Win/Loss Records by Toss Situations
+        if venue_data['toss_situations']:
+            won_bat_first = venue_data['toss_situations'].get('Won Toss & Batted 1st', {})
+            won_bowl_first = venue_data['toss_situations'].get('Won Toss & Bowled 1st', {})
+            lost_bat_first = venue_data['toss_situations'].get('Lost Toss & Batted 1st', {})
+            lost_bowl_first = venue_data['toss_situations'].get('Lost Toss & Bowled 1st', {})
+            
+            insight = f"**Toss Impact on Results:** "
+            if won_bowl_first:
+                insight += f"Teams winning the toss and bowling first have won {won_bowl_first['wins']} and lost {won_bowl_first['losses']} matches. "
+            if lost_bat_first:
+                insight += f"Teams losing the toss and batting first have won {lost_bat_first['wins']} and lost {lost_bat_first['losses']} matches at this venue."
+            insights.append(insight)
+        
+        # Point 3: Comprehensive Venue Statistics - Scoring Patterns
+        if venue_data['venue_stats']:
+            stats = venue_data['venue_stats']
+            insight = f"**Venue Scoring Patterns:** Average score at this venue is {stats['average_score']} with first innings averaging {stats['average_first_innings_score']}. "
+            insight += f"Boundary percentage is {stats['boundary_percentage']}% with {stats['fours_per_match']} fours and {stats['sixes_per_match']} sixes per match on average."
+            insights.append(insight)
+        
+        # Point 4: Bowling Analysis and Phase-wise Performance
+        if venue_data['venue_stats']:
+            stats = venue_data['venue_stats']
+            insight = f"**Bowling & Phase Analysis:** Pace bowlers take {stats['pace_wickets_pct']}% of wickets while spinners account for {stats['spin_wickets_pct']}%. "
+            insight += f"Powerplay (overs 1-6): {stats['powerplay_runs']} runs, {stats['powerplay_wickets']} wickets. "
+            insight += f"Death overs (16-20): {stats['death_overs_runs']} runs per match."
+            insights.append(insight)
+        
+        return insights
     
     def _generate_fixture_analysis(self, team1: str, team2: str, t1_stats: Dict, t2_stats: Dict) -> str:
         """
         Generate fixture analysis with team form and H2H context.
+        (Legacy method - kept for backward compatibility)
         """
         # Determine favorite based on overall stats
         t1_score = (t1_stats['strike_rate'] + t1_stats['batting_average'] * 3 + 

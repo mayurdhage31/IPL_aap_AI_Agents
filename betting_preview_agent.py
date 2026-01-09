@@ -219,7 +219,7 @@ Generate the complete, well-formatted betting preview now."""
             error_msg = f"Error generating betting preview: {str(e)}"
             return error_msg
     
-    def generate_preview(self, team1_name: str, team2_name: str) -> str:
+    def generate_preview(self, team1_name: str, team2_name: str, venue: str = None) -> str:
         """
         Generate a betting preview directly using the detailed analysis tool.
         Faster and more reliable than using the agent.
@@ -227,13 +227,14 @@ Generate the complete, well-formatted betting preview now."""
         Args:
             team1_name: First team name
             team2_name: Second team name
+            venue: Venue name (optional)
             
         Returns:
             Formatted betting preview with analysis and recommendations
         """
         try:
             # Get detailed analysis
-            analysis = self.tools_instance.get_detailed_match_analysis(team1_name, team2_name)
+            analysis = self.tools_instance.get_detailed_match_analysis(team1_name, team2_name, venue=venue)
             
             if "error" in analysis:
                 return f"Error: {analysis['error']}"
@@ -241,15 +242,25 @@ Generate the complete, well-formatted betting preview now."""
             # Format the preview
             preview = f"### IPL Preview: {team1_name} vs {team2_name}\n\n"
             
-            # Fixture Analysis
-            preview += "**Fixture Analysis:**\n"
-            preview += f"{analysis['fixture_analysis']}\n\n"
+            if venue:
+                preview += f"**Venue:** {venue}\n\n"
             
-            # Key Stats & Trends
-            preview += "**Key Stats & Trends:**\n"
-            for stat in analysis['key_stats_and_trends']:
-                preview += f"- {stat}\n"
-            preview += "\n"
+            # Fixture Analysis (now a list of 3 points)
+            preview += "**Fixture Analysis:**\n\n"
+            if isinstance(analysis['fixture_analysis'], list):
+                for point in analysis['fixture_analysis']:
+                    preview += f"{point}\n\n"
+            else:
+                preview += f"{analysis['fixture_analysis']}\n\n"
+            
+            # Venue Insights (replaces Key Stats & Trends)
+            if venue:
+                preview += "**Venue Insights:**\n\n"
+            else:
+                preview += "**Key Stats & Trends:**\n\n"
+            
+            for insight in analysis['venue_insights']:
+                preview += f"{insight}\n\n"
             
             # Recommended Bets & Odds
             preview += "**Recommended Bets & Odds:**\n\n"

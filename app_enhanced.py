@@ -706,13 +706,26 @@ betting_tools = initialize_betting_tools()
 betting_team1 = st.session_state.get('selected_team1', available_teams[0])
 betting_team2 = st.session_state.get('selected_team2', available_teams[min(1, len(available_teams)-1)])
 
+# Add venue selection dropdown
+available_venues = betting_tools.get_all_venues_list()
+selected_venue = st.selectbox(
+    "Select Venue (Optional)",
+    options=['None'] + available_venues,
+    index=0,
+    key="betting_venue",
+    help="Select a venue to get venue-specific insights"
+)
+
+# Convert 'None' to None for processing
+selected_venue = None if selected_venue == 'None' else selected_venue
+
 if st.button("🎯 Generate Betting Preview", use_container_width=True, key="betting_preview_btn"):
     if betting_team1 == betting_team2:
         st.error("⚠️ Please select two different teams")
     else:
         with st.spinner(f"Generating betting preview for {betting_team1} vs {betting_team2}..."):
             # Use direct analysis without requiring API key
-            analysis = betting_tools.get_detailed_match_analysis(betting_team1, betting_team2)
+            analysis = betting_tools.get_detailed_match_analysis(betting_team1, betting_team2, venue=selected_venue)
             
             if "error" in analysis:
                 st.error(f"Error: {analysis['error']}")
@@ -722,14 +735,22 @@ if st.button("🎯 Generate Betting Preview", use_container_width=True, key="bet
                 
                 st.markdown(f'<h3 style="color: #2DD4BF;">IPL Preview: {betting_team1} vs {betting_team2}</h3>', unsafe_allow_html=True)
                 
-                # Fixture Analysis
-                st.markdown('<h4 style="color: #EAF2FF; margin-top: 20px;">Fixture Analysis</h4>', unsafe_allow_html=True)
-                st.markdown(f'<p class="body-text">{analysis["fixture_analysis"]}</p>', unsafe_allow_html=True)
+                if selected_venue:
+                    st.markdown(f'<p class="muted-text" style="margin-bottom: 15px;">📍 Venue: {selected_venue}</p>', unsafe_allow_html=True)
                 
-                # Key Stats & Trends
-                st.markdown('<h4 style="color: #EAF2FF; margin-top: 20px;">Key Stats & Trends</h4>', unsafe_allow_html=True)
-                for stat in analysis['key_stats_and_trends']:
-                    st.markdown(f'<p class="body-text">• {stat}</p>', unsafe_allow_html=True)
+                # Fixture Analysis (3 points: H2H, Recent Form, Batting First/Second Win %)
+                st.markdown('<h4 style="color: #EAF2FF; margin-top: 20px;">Fixture Analysis</h4>', unsafe_allow_html=True)
+                for point in analysis['fixture_analysis']:
+                    st.markdown(f'<p class="body-text">{point}</p>', unsafe_allow_html=True)
+                
+                # Venue Insights (replaces Key Stats & Trends)
+                if selected_venue:
+                    st.markdown('<h4 style="color: #EAF2FF; margin-top: 20px;">Venue Insights</h4>', unsafe_allow_html=True)
+                else:
+                    st.markdown('<h4 style="color: #EAF2FF; margin-top: 20px;">Key Stats & Trends</h4>', unsafe_allow_html=True)
+                
+                for insight in analysis['venue_insights']:
+                    st.markdown(f'<p class="body-text">{insight}</p>', unsafe_allow_html=True)
                 
                 # Recommended Bets & Odds
                 st.markdown('<h4 style="color: #EAF2FF; margin-top: 20px;">Recommended Bets & Odds</h4>', unsafe_allow_html=True)
