@@ -207,7 +207,11 @@ def initialize_highlights_agent(api_key: str):
 @st.cache_resource
 def initialize_betting_tools():
     """Initialize betting tools with caching."""
-    return BettingAnalysisTools()
+    try:
+        return BettingAnalysisTools()
+    except Exception as e:
+        st.error(f"Error initializing betting tools: {str(e)}")
+        return None
 
 @st.cache_resource
 def initialize_journalist_agent(api_key: str):
@@ -707,20 +711,27 @@ betting_team1 = st.session_state.get('selected_team1', available_teams[0])
 betting_team2 = st.session_state.get('selected_team2', available_teams[min(1, len(available_teams)-1)])
 
 # Add venue selection dropdown
-available_venues = betting_tools.get_all_venues_list()
-selected_venue = st.selectbox(
-    "Select Venue (Optional)",
-    options=['None'] + available_venues,
-    index=0,
-    key="betting_venue",
-    help="Select a venue to get venue-specific insights"
-)
+if betting_tools is not None:
+    available_venues = betting_tools.get_all_venues_list()
+    selected_venue = st.selectbox(
+        "Select Venue (Optional)",
+        options=['None'] + available_venues,
+        index=0,
+        key="betting_venue",
+        help="Select a venue to get venue-specific insights"
+    )
+else:
+    st.error("⚠️ Unable to load betting tools. Please refresh the page.")
+    selected_venue = None
 
 # Convert 'None' to None for processing
-selected_venue = None if selected_venue == 'None' else selected_venue
+if selected_venue is not None:
+    selected_venue = None if selected_venue == 'None' else selected_venue
 
 if st.button("🎯 Generate Betting Preview", use_container_width=True, key="betting_preview_btn"):
-    if betting_team1 == betting_team2:
+    if betting_tools is None:
+        st.error("⚠️ Betting tools not initialized. Please refresh the page.")
+    elif betting_team1 == betting_team2:
         st.error("⚠️ Please select two different teams")
     else:
         with st.spinner(f"Generating betting preview for {betting_team1} vs {betting_team2}..."):

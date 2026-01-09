@@ -593,23 +593,23 @@ class BettingAnalysisTools:
         analysis_points = []
         
         # Point 1: Head-to-Head Record (Last 5 Matches)
-        h2h_point = f"**Head-to-Head (Last 5 Matches):** {team1} has won {h2h_record['team1_wins']} out of the last 5 encounters against {team2}, who has won {h2h_record['team2_wins']}. "
+        h2h_point = f"**Head-to-Head:** {team1} {h2h_record['team1_wins']}-{h2h_record['team2_wins']} {team2} in last 5 meetings"
         if h2h_record['team1_wins'] > h2h_record['team2_wins']:
-            h2h_point += f"{team1} holds the psychological edge in this matchup."
+            h2h_point += f" ({team1} holds edge)."
         elif h2h_record['team2_wins'] > h2h_record['team1_wins']:
-            h2h_point += f"{team2} has the upper hand in recent meetings."
+            h2h_point += f" ({team2} has upper hand)."
         else:
-            h2h_point += "The head-to-head record is evenly balanced, making this an unpredictable contest."
+            h2h_point += " (evenly balanced)."
         analysis_points.append(h2h_point)
         
         # Point 2: Recent Form (Last 5 Matches - All Opponents)
-        form_point = f"**Recent Form:** {team1} has won {team1_form['wins']} out of their last 5 matches, while {team2} has won {team2_form['wins']} out of 5. "
+        form_point = f"**Recent Form:** {team1} {team1_form['wins']}/5 wins, {team2} {team2_form['wins']}/5 wins"
         if team1_form['wins'] > team2_form['wins']:
-            form_point += f"{team1} comes into this match with superior momentum and confidence."
+            form_point += f" ({team1} has momentum)."
         elif team2_form['wins'] > team1_form['wins']:
-            form_point += f"{team2} enters this fixture in better form and will be the more confident side."
+            form_point += f" ({team2} in better form)."
         else:
-            form_point += "Both teams are in similar form, suggesting a closely contested match."
+            form_point += " (evenly matched)."
         analysis_points.append(form_point)
         
         # Point 3: Batting First vs Batting Second Win Percentages
@@ -618,8 +618,7 @@ class BettingAnalysisTools:
         t2_bat_first = self.batting_win_percentages.get(team2, {}).get('batting_first', 'N/A')
         t2_bat_second = self.batting_win_percentages.get(team2, {}).get('batting_second', 'N/A')
         
-        batting_point = f"**Batting First vs Second:** {team1} has a {t1_bat_first} win rate batting first and {t1_bat_second} batting second. "
-        batting_point += f"{team2} has {t2_bat_first} batting first and {t2_bat_second} batting second. "
+        batting_point = f"**Toss Factor:** {team1}: {t1_bat_first} (1st), {t1_bat_second} (2nd) | {team2}: {t2_bat_first} (1st), {t2_bat_second} (2nd)"
         
         # Determine toss preference
         if 'N/A' not in [t1_bat_first, t1_bat_second, t2_bat_first, t2_bat_second]:
@@ -629,11 +628,11 @@ class BettingAnalysisTools:
             t2_second_pct = float(t2_bat_second.split('%')[0])
             
             if t1_second_pct > t1_first_pct and t2_second_pct > t2_first_pct:
-                batting_point += "Both teams prefer chasing, making the toss crucial."
+                batting_point += " - Both prefer chasing."
             elif t1_first_pct > t1_second_pct and t2_first_pct > t2_second_pct:
-                batting_point += "Both teams have better records batting first."
+                batting_point += " - Both prefer batting first."
             else:
-                batting_point += "Teams have contrasting preferences, adding tactical intrigue to the toss."
+                batting_point += " - Contrasting preferences."
         
         analysis_points.append(batting_point)
         
