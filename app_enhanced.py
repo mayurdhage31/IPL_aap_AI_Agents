@@ -265,7 +265,7 @@ st.markdown(DARK_THEME_CSS, unsafe_allow_html=True)
 
 # Initialize session state
 if 'selected_section' not in st.session_state:
-    st.session_state['selected_section'] = 'Player Analysis'
+    st.session_state['selected_section'] = 'Betting Preview'
 if 'selected_player' not in st.session_state:
     st.session_state['selected_player'] = None
 if 'selected_team1' not in st.session_state:
@@ -309,6 +309,29 @@ def initialize_journalist_agent(api_key: str):
     llm = ChatAnthropic(model="claude-sonnet-4-20250514", api_key=api_key, temperature=0.7)
     return JournalistPreviewAgent(llm)
 
+def format_fixture_analysis(text):
+    """Format fixture analysis with emojis and bold numbers"""
+    import re
+    
+    # Add emoji based on content keywords
+    emoji = "📊"
+    text_lower = text.lower()
+    if any(word in text_lower for word in ["strike rate", "sr", "scoring", "runs", "average"]):
+        emoji = "🏏"
+    elif any(word in text_lower for word in ["wicket", "bowling", "economy", "defend"]):
+        emoji = "🛡️"
+    elif any(word in text_lower for word in ["death", "powerplay", "fast", "quick"]):
+        emoji = "⚡"
+    elif any(word in text_lower for word in ["win", "victory", "champion", "success"]):
+        emoji = "🏆"
+    elif any(word in text_lower for word in ["accuracy", "precise", "target"]):
+        emoji = "🎯"
+    
+    # Bold all numbers (integers, decimals, percentages)
+    text = re.sub(r'(\d+\.?\d*%?)', r'<strong>\1</strong>', text)
+    
+    return f"{emoji} {text}"
+
 # Initialize tools
 cricket_tools = initialize_cricket_tools()
 fantasy_tools = initialize_fantasy_tools()
@@ -321,8 +344,6 @@ available_venues = betting_tools.get_all_venues_list() if betting_tools else []
 
 # Section descriptions
 SECTION_DESCRIPTIONS = {
-    'Player Analysis': "Deep-dive into individual player performance with AI-powered insights, line & length analysis, and bowling strategies - upcoming improvements include opposition-specific analysis and predictive performance modeling.",
-    'Fantasy Cheat Sheet': "Quick 30-second fantasy insights with venue intelligence, match situation analysis, and optimal team composition - future enhancements will include live match updates and dynamic captain recommendations.",
     'Betting Preview': "Comprehensive match preview from a betting perspective with head-to-head records, team statistics, and venue-specific insights - planned additions include live odds integration and betting trend analysis.",
     'Highlights Package': "AI-curated match highlights and key moments tailored for content creators and analysts - coming soon: automated video timestamp generation and multi-format export options.",
     'Journalist Preview': "Professional match preview content designed for sports journalists with narrative insights and storyline suggestions - future updates will include automated article generation and quote extraction."
@@ -333,47 +354,14 @@ with st.sidebar:
     st.markdown('<h1 class="main-header" style="font-size: 1.8em;">🏏 IPL Insights</h1>', unsafe_allow_html=True)
     st.markdown("---")
     
-    st.markdown('<h3 class="subsection-title" style="font-size: 1.2em;">Navigation</h3>', unsafe_allow_html=True)
-    
-    # Navigation buttons
-    sections = [
-        ('🎯 Player Analysis', 'Player Analysis'),
-        ('⭐ Fantasy Cheat Sheet', 'Fantasy Cheat Sheet'),
-        ('💰 Betting Preview', 'Betting Preview'),
-        ('🎬 Highlights Package', 'Highlights Package'),
-        ('📰 Journalist Preview', 'Journalist Preview')
-    ]
-    
-    for label, section_key in sections:
-        if st.button(label, key=f"nav_{section_key}", use_container_width=True):
-            st.session_state['selected_section'] = section_key
-            st.rerun()
-    
-    st.markdown("---")
-    
-    # Dynamic selection panels based on selected section
+    # Dynamic selection panels based on selected section (MOVED UP)
     selected_section = st.session_state['selected_section']
     
     # Initialize collapse state
     if 'selection_panel_expanded' not in st.session_state:
         st.session_state['selection_panel_expanded'] = True
     
-    if selected_section == 'Player Analysis':
-        with st.expander("🎯 Player Selection", expanded=st.session_state['selection_panel_expanded']):
-            selected_player = st.selectbox(
-                "Select Player",
-                options=players_list,
-                index=0,
-                key="sidebar_player",
-                label_visibility="collapsed"
-            )
-            st.session_state['selected_player'] = selected_player
-            
-            if st.button("🔍 Analyze Player", use_container_width=True, key="analyze_player_btn"):
-                st.session_state['trigger_analysis'] = True
-                st.rerun()
-    
-    elif selected_section in ['Fantasy Cheat Sheet', 'Betting Preview', 'Highlights Package', 'Journalist Preview']:
+    if selected_section in ['Betting Preview', 'Highlights Package', 'Journalist Preview']:
         with st.expander("⚙️ Match Configuration", expanded=st.session_state['selection_panel_expanded']):
             st.markdown('<p class="body-text" style="font-size: 0.9em; margin-bottom: 8px;"><strong>Team Selection</strong></p>', unsafe_allow_html=True)
             
@@ -398,11 +386,7 @@ with st.sidebar:
             st.markdown('<div style="margin-top: 15px;"></div>', unsafe_allow_html=True)
             
             # Generate buttons for each section
-            if selected_section == 'Fantasy Cheat Sheet':
-                if st.button("🎯 Generate Fantasy Analysis", use_container_width=True, key="gen_fantasy"):
-                    st.session_state['trigger_fantasy'] = True
-                    st.rerun()
-            elif selected_section == 'Betting Preview':
+            if selected_section == 'Betting Preview':
                 if st.button("🎯 Generate Betting Preview", use_container_width=True, key="gen_betting"):
                     st.session_state['trigger_betting'] = True
                     st.rerun()
@@ -410,6 +394,22 @@ with st.sidebar:
                 st.markdown('<p class="muted-text" style="font-size: 0.85em;">Highlights are pre-generated for demonstration</p>', unsafe_allow_html=True)
             elif selected_section == 'Journalist Preview':
                 st.markdown('<p class="muted-text" style="font-size: 0.85em;">Preview is pre-generated for demonstration</p>', unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    st.markdown('<h3 class="subsection-title" style="font-size: 1.1em; margin-bottom: 8px;">Navigation</h3>', unsafe_allow_html=True)
+    
+    # Navigation buttons (MOVED DOWN - only 3 tabs)
+    sections = [
+        ('💰 Betting Preview', 'Betting Preview'),
+        ('🎬 Highlights Package', 'Highlights Package'),
+        ('📰 Journalist Preview', 'Journalist Preview')
+    ]
+    
+    for label, section_key in sections:
+        if st.button(label, key=f"nav_{section_key}", use_container_width=True):
+            st.session_state['selected_section'] = section_key
+            st.rerun()
     
     st.markdown("---")
     
@@ -880,9 +880,10 @@ elif current_section == 'Betting Preview':
                     if venue:
                         st.markdown(f'<p class="muted-text" style="margin-bottom: 15px;">📍 Venue: {venue}</p>', unsafe_allow_html=True)
                     
-                    st.markdown('<h4 style="color: #EAF2FF; margin-top: 20px;">Fixture Analysis</h4>', unsafe_allow_html=True)
+                    st.markdown('<h4 style="color: #EAF2FF; margin-top: 20px; margin-bottom: 10px;">Fixture Analysis</h4>', unsafe_allow_html=True)
                     for point in analysis['fixture_analysis']:
-                        st.markdown(f'<p class="body-text">{point}</p>', unsafe_allow_html=True)
+                        formatted_point = format_fixture_analysis(point)
+                        st.markdown(f'<p class="body-text" style="margin: 6px 0; line-height: 1.5;">{formatted_point}</p>', unsafe_allow_html=True)
                     
                     if venue:
                         st.markdown('<h4 style="color: #EAF2FF; margin-top: 20px;">Venue Insights</h4>', unsafe_allow_html=True)
@@ -1006,21 +1007,6 @@ elif current_section == 'Highlights Package':
 ''', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     
-    st.markdown('<div class="inner-card" style="margin-top: 20px; background: linear-gradient(135deg, #1C2A3A 0%, #223347 100%); border-left: 4px solid #2DD4BF;">', unsafe_allow_html=True)
-    st.markdown('<h4 style="color: #2DD4BF;">💼 Business Value</h4>', unsafe_allow_html=True)
-    st.markdown('''
-<p class="body-text">This technology can be used for:</p>
-<ul class="body-text">
-    <li>✅ <strong>Automated post-match highlight reels</strong> with narrative from ball-by-ball data</li>
-    <li>✅ <strong>Real-time social media content creation</strong> for engagement</li>
-    <li>✅ <strong>Personalized match recaps</strong> for fans and fantasy players</li>
-    <li>✅ <strong>Broadcast-ready commentary scripts</strong> for media companies</li>
-    <li>✅ <strong>Multi-language highlights</strong> with AI translation</li>
-    <li>✅ <strong>Data-driven storytelling</strong> from raw match statistics</li>
-</ul>
-<p class="muted-text" style="margin-top: 10px;">💡 This demo is generated from the Sample_IPL_Matches.csv dataset containing ball-by-ball data. In production, this would connect to live match feeds for instant post-match analysis.</p>
-''', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
 elif current_section == 'Journalist Preview':
     st.markdown('<h2 class="section-title">📰 Journalist Preview</h2>', unsafe_allow_html=True)
@@ -1040,9 +1026,9 @@ elif current_section == 'Journalist Preview':
 
 <h4 style="color: #EAF2FF; margin-top: 20px;">📊 Team Form & Strengths</h4>
 
-<p class="body-text"><strong>Mumbai Indians</strong> enter this contest with a well-balanced squad featuring explosive batting depth. Their team statistics from IPL 2021-24 reveal a strike rate of 139.2% with a boundary percentage of 17.8%, showcasing their aggressive intent. The five-time champions excel in the powerplay (SR: 142.5%) and death overs (SR: 156.3%), making them dangerous throughout the innings. However, their average vs spin (24.8) suggests vulnerability against quality tweakers on turning tracks.</p>
+<p class="body-text"><strong>Mumbai Indians</strong> enter this contest with a well-balanced squad featuring explosive batting depth. Their team statistics reveal a strike rate of 139.2% with a boundary percentage of 17.8%, showcasing their aggressive intent. The five-time champions excel in the powerplay (SR: 142.5%) and death overs (SR: 156.3%), making them dangerous throughout the innings. However, their average vs spin (24.8) suggests vulnerability against quality tweakers on turning tracks.</p>
 
-<p class="body-text"><strong>Chennai Super Kings</strong> bring their trademark experience and tactical acumen to their home fortress. With a team batting average of 26.5 and strike rate of 136.8%, CSK balance aggression with stability. Their strength lies in playing spin (SR vs Spin: 128.4%) and finishing games in familiar conditions. The second innings average of 28.3 highlights their chasing prowess, crucial for home games at Chepauk.</p>
+<p class="body-text"><strong>Chennai Super Kings</strong> bring their trademark experience and tactical acumen to their home fortress. With an impressive home win rate of 68% at Chepauk and strike rate of 136.8%, CSK balance aggression with stability. Their strength lies in playing spin (SR vs Spin: 128.4%) and finishing games in familiar conditions. The second innings average of 28.3 highlights their chasing prowess, crucial for home games at Chepauk.</p>
 
 <h4 style="color: #2DD4BF; margin-top: 25px;">⭐ Players to Watch - Mumbai Indians</h4>
 
@@ -1088,10 +1074,10 @@ elif current_section == 'Journalist Preview':
     <li>✅ <strong>Multi-language previews</strong> with AI translation</li>
     <li>✅ <strong>Scalable content creation</strong> for multiple matches simultaneously</li>
 </ul>
-<p class="muted-text" style="margin-top: 10px;">💡 This preview is crafted using comprehensive IPL datasets (2021-2024) including player statistics, team performance data, and venue intelligence from the Sample_IPL_Matches.csv and related datasets.</p>
+<p class="muted-text" style="margin-top: 10px;">💡 This preview is crafted using comprehensive IPL datasets including player statistics, team performance data, and venue intelligence from the Sample_IPL_Matches.csv and related datasets.</p>
 ''', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Footer
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-st.markdown('<p class="muted-text" style="text-align: center;">Built with LangChain + Claude Sonnet 4.5 | IPL Data 2021-2024</p>', unsafe_allow_html=True)
+st.markdown('<p class="muted-text" style="text-align: center;">Built with LangChain + Claude Sonnet 4.5 | IPL Data</p>', unsafe_allow_html=True)
